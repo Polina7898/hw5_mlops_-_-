@@ -15,8 +15,8 @@
 ## 2. Как запустить
 
 ```bash
-git clone https://github.com/Polina7898/hw5_mlops_-_-.git
-cd hw5_mlops_-_-
+git clone https://github.com/Polina7898/hw5_mlops_Kuznetsova_Polin.git
+cd hw5_mlops_Kuznetsova_Polin
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python src/load_raw.py
