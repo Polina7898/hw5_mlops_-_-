@@ -1,0 +1,20 @@
+project: hw5_mlops_iris
+provider: local
+registry: registry.db
+online_store:
+  type: postgres
+  host: localhost
+  port: 5432
+  database: feast
+  db_schema: public
+  user: feast
+  password: feast
+offline_store:
+  type: postgres
+  host: localhost
+  port: 5432
+  database: feast
+  db_schema: public
+  user: feast
+  password: feast
+entity_key_serialization_version: 2

@@ -1,0 +1,15 @@
+prepare:
+  target: variety
+  test_size: 0.2
+  random_state: 42
+
+train:
+  model: random_forest
+  n_estimators: 200
+  max_depth: 6
+  random_state: 42
+
+mlflow:
+  tracking_uri: sqlite:///mlflow.db
+  experiment_name: hw5_iris_reproducibility
+  run_name: rf_baseline

@@ -1,0 +1,89 @@
+digraph face_blur_ml_system {
+    rankdir=LR;
+    bgcolor="white";
+    fontname="Helvetica";
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11];
+    edge [fontname="Helvetica", fontsize=10];
+
+    User [label="Пользователь\n(загрузка видео)", shape=oval, fillcolor="#E3F2FD"];
+
+    subgraph cluster_ingest {
+        label="Ingest";
+        style="rounded,filled";
+        fillcolor="#FFF8E1";
+        API [label="Upload API\n(FastAPI)", fillcolor="#FFF3CD"];
+        S3raw [label="S3: raw video", shape=cylinder, fillcolor="#FFE0B2"];
+        Kafka [label="Kafka:\nframe queue", fillcolor="#FFCC80"];
+    }
+
+    subgraph cluster_pre {
+        label="Препроцессинг";
+        style="rounded,filled";
+        fillcolor="#E8F5E9";
+        Splitter [label="Frame splitter\n(GPU pool)", fillcolor="#C8E6C9"];
+        Redis [label="Redis cache\n(dedup)", shape=cylinder, fillcolor="#A5D6A7"];
+    }
+
+    subgraph cluster_inf {
+        label="Inference workers\n(параллельно)";
+        style="rounded,filled";
+        fillcolor="#E1F5FE";
+        Det1 [label="Face Detector #1\nYOLO / RetinaFace", fillcolor="#B3E5FC"];
+        Det2 [label="Face Detector #2", fillcolor="#B3E5FC"];
+        Det3 [label="Face Detector #3", fillcolor="#B3E5FC"];
+    }
+
+    subgraph cluster_post {
+        label="Постпроцессинг";
+        style="rounded,filled";
+        fillcolor="#FCE4EC";
+        Blur [label="Mosaic / Gaussian\nblur worker", fillcolor="#F8BBD0"];
+        Encoder [label="Video encoder\n(ffmpeg)", fillcolor="#F48FB1"];
+        S3out [label="S3: blurred video", shape=cylinder, fillcolor="#F06292"];
+    }
+
+    subgraph cluster_mlops {
+        label="MLOps контур";
+        style="rounded,filled";
+        fillcolor="#F3E5F5";
+        MLflow [label="MLflow Registry\n+ Tracking", fillcolor="#E1BEE7"];
+        Airflow [label="Airflow:\nretraining DAG", fillcolor="#CE93D8"];
+        Feast [label="Feature Store\n(Postgres + Feast)", shape=cylinder, fillcolor="#BA68C8"];
+        DVC [label="DVC remote\n(данные и модели)", shape=cylinder, fillcolor="#AB47BC"];
+    }
+
+    subgraph cluster_obs {
+        label="Observability";
+        style="rounded,filled";
+        fillcolor="#EFEBE9";
+        Prom [label="Prometheus\nlatency / FPS", fillcolor="#D7CCC8"];
+        Graf [label="Grafana\nдашборды и SLA", fillcolor="#BCAAA4"];
+        Alert [label="Alertmanager\n+ Telegram", fillcolor="#A1887F"];
+    }
+
+    User -> API -> S3raw -> Kafka -> Splitter -> Redis;
+    Redis -> Det1 [label="batch"];
+    Redis -> Det2 [label="batch"];
+    Redis -> Det3 [label="batch"];
+    Det1 -> Blur;
+    Det2 -> Blur;
+    Det3 -> Blur;
+    Blur -> Encoder -> S3out -> User [label="ссылка на результат", style=dashed];
+
+    MLflow -> Det1 [style=dashed, label="serve model"];
+    MLflow -> Det2 [style=dashed];
+    MLflow -> Det3 [style=dashed];
+    Airflow -> MLflow [style=dashed];
+    DVC -> Airflow [style=dashed, label="versioned data"];
+    Feast -> Det1 [style=dashed, label="features"];
+    Feast -> Det2 [style=dashed];
+    Feast -> Det3 [style=dashed];
+
+    Det1 -> Prom [style=dotted];
+    Det2 -> Prom [style=dotted];
+    Det3 -> Prom [style=dotted];
+    Blur -> Prom [style=dotted];
+    Encoder -> Prom [style=dotted];
+    Prom -> Graf;
+    Prom -> Alert;
+}
